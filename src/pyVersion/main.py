@@ -157,13 +157,13 @@ How to use:
     def get_quadrant(self, x, y):
         """Determine which quadrant a point is in"""
         if x >= 0 and y >= 0:
-            return "Gnatty NPC"
+            return "Gnatty, NPC"
         elif x < 0 and y >= 0:
-            return "Not NPC"
+            return "Not, NPC"
         elif x < 0 and y < 0:
-            return "Not Non-NPC"
+            return "Not, Non-NPC"
         else:  # x >= 0 and y < 0
-            return "Gnatty Non-NPC"
+            return "Gnatty, Non-NPC"
     
     def cancel_drag(self, event=None):
         """Cancel current drag operation"""

@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "last_updated": "2025-07-30 15:44:52",
-    "total_people": 1,
+    "last_updated": "2025-07-30 17:18:26",
+    "total_people": 2,
     "version": "2.0"
   },
   "people": {
@@ -10,7 +10,14 @@
       "y": -58.077032387213166,
       "quadrant": "Not Non-NPC",
       "date_added": "2025-07-30 15:40:52",
-      "last_moved": "2025-07-30 15:44:52"
+      "last_moved": "2025-07-30 17:18:26"
+    },
+    "C/C++ Dudes": {
+      "x": 99.54064104378708,
+      "y": 99.59593213636984,
+      "quadrant": "Gnatty NPC",
+      "date_added": "2025-07-30 16:08:45",
+      "last_moved": "2025-07-30 17:18:26"
     }
   }
 }
