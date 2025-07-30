@@ -1,78 +1,40 @@
 {
   "metadata": {
-    "last_updated": "2025-07-30 20:09:48.101",
-    "total_people": 3,
+    "last_updated": "2025-07-30 20:20:35.746",
+    "total_people": 1,
     "version": "2.1",
-    "total_edits": 5,
-    "session_started": "2025-07-30 20:09:27"
+    "total_edits": 2,
+    "session_started": "2025-07-30 20:20:35"
   },
   "edit_history": [
     {
-      "timestamp": "2025-07-30 20:09:01.760",
-      "action": "session_started",
-      "details": {
-        "previous_total_people": 2,
-        "previous_last_updated": "2025-07-30 17:18:26"
-      }
-    },
-    {
-      "timestamp": "2025-07-30 20:09:06.918",
-      "action": "session_ended",
-      "details": {
-        "final_people_count": 2,
-        "session_duration_seconds": 5.885594
-      }
-    },
-    {
-      "timestamp": "2025-07-30 20:09:27.481",
-      "action": "session_started",
-      "details": {
-        "previous_total_people": 2,
-        "previous_last_updated": "2025-07-30 20:09:06.918"
-      }
-    },
-    {
-      "timestamp": "2025-07-30 20:09:43.073",
+      "timestamp": "2025-07-30 20:20:32.687",
       "action": "person_added",
       "details": {
-        "name": "New Test",
+        "name": "Test",
         "position": {
           "x": 0,
           "y": 0
         },
-        "quadrant": "Gnatty NPC"
+        "quadrant": "Gnatty, NPC"
       }
     },
     {
-      "timestamp": "2025-07-30 20:09:48.101",
+      "timestamp": "2025-07-30 20:20:35.746",
       "action": "session_ended",
       "details": {
-        "final_people_count": 3,
-        "session_duration_seconds": 21.098356
+        "final_people_count": 1,
+        "session_duration_seconds": 0
       }
     }
   ],
   "people": {
-    "Ellie Connor": {
-      "x": -62.894862127977134,
-      "y": -58.077032387213166,
-      "quadrant": "Not Non-NPC",
-      "date_added": "2025-07-30 15:40:52",
-      "last_moved": "2025-07-30 20:09:48.101"
-    },
-    "C/C++ Dudes": {
-      "x": 99.54064104378708,
-      "y": 99.59593213636984,
-      "quadrant": "Gnatty NPC",
-      "date_added": "2025-07-30 16:08:45",
-      "last_moved": "2025-07-30 20:09:48.101"
-    },
-    "New Test": {
+    "Test": {
       "x": 0.0,
       "y": 0.0,
-      "quadrant": "Gnatty NPC",
-      "date_added": "2025-07-30 20:09:43",
-      "last_moved": "2025-07-30 20:09:48.101"
+      "quadrant": "Gnatty, NPC",
+      "date_added": "2025-07-30 20:20:32",
+      "last_moved": "2025-07-30 20:20:35.746"
     }
   }
 }
