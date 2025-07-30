@@ -6,7 +6,9 @@ from matplotlib.figure import Figure
 import matplotlib.patches as patches
 import json
 import os
+import stat
 from datetime import datetime
+import platform
 
 class PersonalityCompass:
     def __init__(self, root):
@@ -18,11 +20,13 @@ class PersonalityCompass:
         self.people = {}  # {name: {'x': float, 'y': float, 'scatter': matplotlib_scatter, 'annotation': matplotlib_annotation, 'date_added': str, 'quadrant': str}}
         self.dragging = None
         self.drag_offset = (0, 0)
+        self.edit_history = []  # Track all edit operations
         
-        # Create data directory
+        # Create data directory and hide it
         self.data_dir = "personality_compass_data"
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
+            self.hide_folder(self.data_dir)
         self.data_file = os.path.join(self.data_dir, "people_data.json")
         
         self.setup_gui()
@@ -128,13 +132,13 @@ How to use:
         self.ax.axvline(x=0, color='black', linewidth=1.5, alpha=0.8)
         
         # Add quadrant labels
-        self.ax.text(110, 50, 'Gnatty, \nNPC', ha='center', va='center', 
+        self.ax.text(100, 50, 'Gnatty, \nNPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightblue', alpha=0.5))
         self.ax.text(-110, 50, 'Not, \nNPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightcoral', alpha=0.5))
-        self.ax.text(-110, -50, 'Not,\nNon NPC', ha='center', va='center', 
+        self.ax.text(-110, -50, 'Not, \nNon NPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightgreen', alpha=0.5))
         self.ax.text(110, -50, 'Gnatty, \nNon NPC', ha='center', va='center', 
@@ -154,6 +158,53 @@ How to use:
         # Bind keyboard events
         self.root.bind('<Escape>', self.cancel_drag)
         
+    def hide_folder(self, folder_path):
+        """Hide the data folder based on the operating system"""
+        try:
+            system = platform.system()
+            if system == "Windows":
+                # Windows: Use attrib command to hide folder
+                os.system(f'attrib +h "{folder_path}"')
+            elif system in ["Darwin", "Linux"]:  # macOS and Linux
+                # Unix-like: Folders starting with . are hidden by default
+                # If folder doesn't start with ., create a .hidden file
+                hidden_file = os.path.join(os.path.dirname(folder_path), ".hidden")
+                if not folder_path.startswith('.'):
+                    with open(hidden_file, 'a') as f:
+                        f.write(f"{os.path.basename(folder_path)}\n")
+        except Exception as e:
+            print(f"Could not hide folder: {e}")
+    
+    def log_edit(self, action, details=None):
+        """Log an edit operation with timestamp"""
+        edit_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+            "action": action,
+            "details": details or {}
+        }
+        self.edit_history.append(edit_entry)
+        
+        # Keep only last 100 edits to prevent file from growing too large
+        if len(self.edit_history) > 100:
+            self.edit_history = self.edit_history[-100:]
+        
+    def hide_folder(self, folder_path):
+        """Hide the data folder based on the operating system"""
+        try:
+            system = platform.system()
+            if system == "Windows":
+                # Windows: Use attrib command to hide folder
+                os.system(f'attrib +h "{folder_path}"')
+            elif system in ["Darwin", "Linux"]:  # macOS and Linux
+                # Unix-like: Folders starting with . are hidden by default
+                # If folder doesn't start with ., create a .hidden file
+                hidden_file = os.path.join(os.path.dirname(folder_path), ".hidden")
+                if not folder_path.startswith('.'):
+                    with open(hidden_file, 'a') as f:
+                        f.write(f"{os.path.basename(folder_path)}\n")
+        except Exception as e:
+            print(f"Could not hide folder: {e}")
+    
     def get_quadrant(self, x, y):
         """Determine which quadrant a point is in"""
         if x >= 0 and y >= 0:
@@ -217,6 +268,13 @@ How to use:
             'quadrant': quadrant
         }
         
+        # Log the addition
+        self.log_edit("person_added", {
+            "name": name,
+            "position": {"x": x, "y": y},
+            "quadrant": quadrant
+        })
+        
         # Update listbox
         self.people_listbox.insert(tk.END, f"{name} ({x:.0f}, {y:.0f})")
         
@@ -234,6 +292,13 @@ How to use:
         
     def clear_all(self):
         if messagebox.askyesno("Confirm", "Clear all people from the grid?"):
+            # Log the clear operation before clearing
+            people_cleared = list(self.people.keys())
+            self.log_edit("all_people_cleared", {
+                "people_count": len(people_cleared),
+                "people_names": people_cleared
+            })
+            
             # Clear plot
             for person_data in self.people.values():
                 person_data['scatter'].remove()
@@ -300,7 +365,18 @@ How to use:
         if self.dragging:
             # Update quadrant when drag is finished
             person_data = self.people[self.dragging]
-            person_data['quadrant'] = self.get_quadrant(person_data['x'], person_data['y'])
+            old_quadrant = person_data['quadrant']
+            new_quadrant = self.get_quadrant(person_data['x'], person_data['y'])
+            person_data['quadrant'] = new_quadrant
+            
+            # Log the position change
+            self.log_edit("person_moved", {
+                "name": self.dragging,
+                "new_position": {"x": person_data['x'], "y": person_data['y']},
+                "old_quadrant": old_quadrant,
+                "new_quadrant": new_quadrant
+            })
+            
             self.update_listbox()
             
         self.dragging = None
@@ -328,6 +404,15 @@ How to use:
     
     def remove_person(self, name):
         if name in self.people:
+            # Log the removal before removing
+            person_data = self.people[name]
+            self.log_edit("person_removed", {
+                "name": name,
+                "position": {"x": person_data['x'], "y": person_data['y']},
+                "quadrant": person_data['quadrant'],
+                "date_added": person_data['date_added']
+            })
+            
             # Remove from plot
             self.people[name]['scatter'].remove()
             self.people[name]['annotation'].remove()
@@ -340,6 +425,9 @@ How to use:
             
             # Refresh canvas
             self.canvas.draw()
+            
+            # Save data after removing person
+            self.save_data()
     
     def update_listbox(self):
         self.people_listbox.delete(0, tk.END)
@@ -347,15 +435,18 @@ How to use:
             self.people_listbox.insert(tk.END, f"{name} ({data['x']:.0f}, {data['y']:.0f}) - {data['quadrant']}")
     
     def save_data(self):
-        """Save people data to JSON file with enhanced information"""
+        """Save people data to JSON file with enhanced information and edit history"""
         try:
             # Extract all data including metadata
             save_data = {
                 "metadata": {
-                    "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
                     "total_people": len(self.people),
-                    "version": "2.0"
+                    "version": "2.1",
+                    "total_edits": len(self.edit_history),
+                    "session_started": getattr(self, 'session_start', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 },
+                "edit_history": self.edit_history,
                 "people": {}
             }
             
@@ -365,7 +456,7 @@ How to use:
                     'y': float(data['y']),
                     'quadrant': data['quadrant'],
                     'date_added': data['date_added'],
-                    'last_moved': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    'last_moved': datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 }
             
             with open(self.data_file, 'w') as f:
@@ -380,6 +471,17 @@ How to use:
             if os.path.exists(self.data_file):
                 with open(self.data_file, 'r') as f:
                     loaded_data = json.load(f)
+                
+                # Load edit history if available
+                self.edit_history = loaded_data.get("edit_history", [])
+                
+                # Log the session start
+                if not hasattr(self, 'session_start'):
+                    self.session_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    self.log_edit("session_started", {
+                        "previous_total_people": loaded_data.get("metadata", {}).get("total_people", 0),
+                        "previous_last_updated": loaded_data.get("metadata", {}).get("last_updated", "Unknown")
+                    })
                 
                 # Handle both old and new data formats
                 if "people" in loaded_data:
@@ -422,12 +524,20 @@ How to use:
                 self.canvas.draw()
                 
                 print(f"Loaded {len(people_data)} people from saved data")
+                print(f"Edit history contains {len(self.edit_history)} entries")
                 
         except Exception as e:
             print(f"Error loading data: {e}")
+            # Initialize session start even if loading fails
+            if not hasattr(self, 'session_start'):
+                self.session_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def on_closing(self):
         """Handle window closing - ensure data is saved"""
+        self.log_edit("session_ended", {
+            "final_people_count": len(self.people),
+            "session_duration_seconds": (datetime.now() - datetime.strptime(self.session_start, "%Y-%m-%d %H:%M:%S")).total_seconds() if hasattr(self, 'session_start') else 0
+        })
         self.save_data()
         self.root.destroy()
 
