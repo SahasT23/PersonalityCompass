@@ -128,16 +128,16 @@ How to use:
         self.ax.axvline(x=0, color='black', linewidth=1.5, alpha=0.8)
         
         # Add quadrant labels
-        self.ax.text(110, 50, 'Gnatty\nNPC', ha='center', va='center', 
+        self.ax.text(110, 50, 'Gnatty, \nNPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightblue', alpha=0.5))
-        self.ax.text(-110, 50, 'Not\nNPC', ha='center', va='center', 
+        self.ax.text(-110, 50, 'Not, \nNPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightcoral', alpha=0.5))
-        self.ax.text(-110, -50, 'Not\nNon NPC', ha='center', va='center', 
+        self.ax.text(-110, -50, 'Not,\nNon NPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightgreen', alpha=0.5))
-        self.ax.text(110, -50, 'Gnatty\nNon NPC', ha='center', va='center', 
+        self.ax.text(110, -50, 'Gnatty, \nNon NPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightyellow', alpha=0.5))
         
