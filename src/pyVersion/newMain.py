@@ -77,11 +77,8 @@ Mouse Controls:
 • Left-click + drag: Move person on grid
 • Right-click: Remove person from grid
 
-How to use:
-1. Enter a name and press Enter or click 'Add Person'
-2. Drag the person's red dot to position them
-3. Right-click on a dot to remove that person
-"""
+Data is automatically saved to:
+personality_compass_data/ folder"""
         
         ttk.Label(instructions_frame, text=instructions, justify=tk.LEFT).pack()
         
@@ -103,6 +100,29 @@ How to use:
         # Bind keyboard events
         self.people_listbox.bind('<Delete>', self.delete_selected_person)
         self.people_listbox.bind('<BackSpace>', self.delete_selected_person)
+        self.people_listbox.bind('<Double-Button-1>', self.edit_coordinates)
+        self.people_listbox.bind('<<ListboxSelect>>', self.on_person_select)
+        
+        # Coordinate editing frame
+        coord_frame = ttk.LabelFrame(list_frame, text="Edit Coordinates", padding="5")
+        coord_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        ttk.Label(coord_frame, text="X:").grid(row=0, column=0, padx=(0, 5))
+        self.x_var = tk.StringVar()
+        self.x_entry = ttk.Entry(coord_frame, textvariable=self.x_var, width=8)
+        self.x_entry.grid(row=0, column=1, padx=(0, 10))
+        
+        ttk.Label(coord_frame, text="Y:").grid(row=0, column=2, padx=(0, 5))
+        self.y_var = tk.StringVar()
+        self.y_entry = ttk.Entry(coord_frame, textvariable=self.y_var, width=8)
+        self.y_entry.grid(row=0, column=3, padx=(0, 10))
+        
+        update_pos_btn = ttk.Button(coord_frame, text="Update Position", command=self.update_coordinates)
+        update_pos_btn.grid(row=0, column=4, padx=(5, 0))
+        
+        # Bind Enter key to update coordinates
+        self.x_entry.bind('<Return>', lambda e: self.update_coordinates())
+        self.y_entry.bind('<Return>', lambda e: self.update_coordinates())
         
         # Plot frame
         plot_frame = ttk.Frame(main_frame)
@@ -132,16 +152,16 @@ How to use:
         self.ax.axvline(x=0, color='black', linewidth=1.5, alpha=0.8)
         
         # Add quadrant labels
-        self.ax.text(100, 50, 'Gnatty, \nNPC', ha='center', va='center', 
+        self.ax.text(110, 50, 'Gnatty,\nNPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightblue', alpha=0.5))
-        self.ax.text(-110, 50, 'Not, \nNPC', ha='center', va='center', 
+        self.ax.text(-110, 50, 'Not,\nNPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightcoral', alpha=0.5))
-        self.ax.text(-110, -50, 'Not, \nNon NPC', ha='center', va='center', 
+        self.ax.text(-110, -50, 'Not,\nNon NPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightgreen', alpha=0.5))
-        self.ax.text(110, -50, 'Gnatty, \nNon NPC', ha='center', va='center', 
+        self.ax.text(110, -50, 'Gnatty,\nNon NPC', ha='center', va='center', 
                     fontsize=10, alpha=0.6, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightyellow', alpha=0.5))
         
@@ -208,13 +228,13 @@ How to use:
     def get_quadrant(self, x, y):
         """Determine which quadrant a point is in"""
         if x >= 0 and y >= 0:
-            return "Gnatty, NPC"
+            return "Gnatty NPC"
         elif x < 0 and y >= 0:
-            return "Not, NPC"
+            return "Not NPC"
         elif x < 0 and y < 0:
-            return "Not, Non-NPC"
+            return "Not Non-NPC"
         else:  # x >= 0 and y < 0
-            return "Gnatty, Non-NPC"
+            return "Gnatty Non-NPC"
     
     def cancel_drag(self, event=None):
         """Cancel current drag operation"""
@@ -230,6 +250,85 @@ How to use:
             name = selected_text.split(' (')[0]
             if name in self.people:
                 self.remove_person(name)
+    
+    def edit_coordinates(self, event=None):
+        """Load coordinates of selected person into edit fields"""
+        selection = self.people_listbox.curselection()
+        if selection:
+            selected_text = self.people_listbox.get(selection[0])
+            name = selected_text.split(' (')[0]
+            if name in self.people:
+                person_data = self.people[name]
+                self.x_var.set(f"{person_data['x']:.1f}")
+                self.y_var.set(f"{person_data['y']:.1f}")
+                # Focus on X entry for immediate editing
+                self.x_entry.focus()
+                self.x_entry.select_range(0, tk.END)
+    
+    def update_coordinates(self):
+        """Update the selected person's coordinates from the input fields"""
+        selection = self.people_listbox.curselection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a person from the list first.")
+            return
+        
+        try:
+            # Get and validate coordinates
+            x = float(self.x_var.get())
+            y = float(self.y_var.get())
+            
+            # Constrain to plot bounds
+            x = max(-100, min(100, x))
+            y = max(-100, min(100, y))
+            
+            # Get selected person
+            selected_text = self.people_listbox.get(selection[0])
+            name = selected_text.split(' (')[0]
+            
+            if name in self.people:
+                # Store old position for logging
+                old_x = self.people[name]['x']
+                old_y = self.people[name]['y']
+                old_quadrant = self.people[name]['quadrant']
+                
+                # Update position
+                self.update_person_position(name, x, y)
+                
+                # Update quadrant
+                new_quadrant = self.get_quadrant(x, y)
+                self.people[name]['quadrant'] = new_quadrant
+                
+                # Log the coordinate edit
+                self.log_edit("coordinates_edited", {
+                    "name": name,
+                    "old_position": {"x": old_x, "y": old_y},
+                    "new_position": {"x": x, "y": y},
+                    "old_quadrant": old_quadrant,
+                    "new_quadrant": new_quadrant,
+                    "method": "manual_input"
+                })
+                
+                # Update display and save
+                self.update_listbox()
+                self.save_data()
+                
+                # Update the input fields with constrained values
+                self.x_var.set(f"{x:.1f}")
+                self.y_var.set(f"{y:.1f}")
+                
+        except ValueError:
+            messagebox.showerror("Error", "Please enter valid numbers for X and Y coordinates.\nX and Y must be between -100 and 100.")
+    
+    def on_person_select(self, event=None):
+        """Handle person selection in listbox - populate coordinate fields"""
+        selection = self.people_listbox.curselection()
+        if selection:
+            selected_text = self.people_listbox.get(selection[0])
+            name = selected_text.split(' (')[0]
+            if name in self.people:
+                person_data = self.people[name]
+                self.x_var.set(f"{person_data['x']:.1f}")
+                self.y_var.set(f"{person_data['y']:.1f}")
         
     def add_person(self):
         name = self.name_var.get().strip()
